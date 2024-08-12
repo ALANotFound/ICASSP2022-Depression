@@ -16,6 +16,11 @@ from audio_gru_whole import AudioBiLSTM
 
 from sklearn.preprocessing import StandardScaler
 import pickle
+import sys
+
+import pathlib
+root_path = str(pathlib.Path(__file__).parent)
+sys.path.append(root_path)
 
 class BiLSTM(nn.Module):
     def __init__(self, rnn_layers, dropout, num_classes, audio_hidden_dims, audio_embed_size):
@@ -40,12 +45,8 @@ class BiLSTM(nn.Module):
         x = x.sum(dim=1)
         out = self.fc_audio(x)
         return out
-
-# prefix = os.path.abspath(os.path.join(os.getcwd(), "."))
-# audio_features = np.squeeze(np.load(os.path.join(prefix, 'Features/Audio/whole_samples_clf_avid256.npz'))['arr_0'], axis=2)
-# audio_targets = np.load(os.path.join(prefix, 'Features/Audio/whole_labels_clf_avid256.npz'))['arr_0']
-
-prefix = os.path.abspath(os.path.join(os.getcwd(), "."))
+    
+prefix = '/home/youjiajun/data/EATD'
 audio_features = np.squeeze(np.load(os.path.join(prefix, 'Features/AudioWhole/whole_samples_clf_256.npz'))['arr_0'], axis=2)
 audio_targets = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_labels_clf_256.npz'))['arr_0']
 
@@ -164,13 +165,15 @@ def evaluate(model, test_idxs):
 # evaluate(audio_features_test, fuse_targets_test, audio_lstm_model)
 # evaluate(model)
 
-idxs_paths = ['train_idxs_0.63_1.npy', 'train_idxs_0.65_2.npy', 'train_idxs_0.60_3.npy']
-audio_model_paths = ['BiLSTM_gru_vlad256_256_0.67_1.pt', 'BiLSTM_gru_vlad256_256_0.67_2.pt', 'BiLSTM_gru_vlad256_256_0.63_3.pt']
+idx_path = os.path.join(root_path, 'Model/train_idxs_0.76_1.npy')
+model_path = os.path.join(root_path, 'Model/Audio/BiLSTM_gru_vlad256_256_0.76_1.pt')
+idxs_paths = [idx_path]
+audio_model_paths = [model_path]
 ps, rs, fs = [], [], []
-for fold in range(3):
-    train_idxs_tmp = np.load(os.path.join(prefix, 'Features/TextWhole/{}'.format(idxs_paths[fold])), allow_pickle=True)
+for fold in range(1):
+    train_idxs_tmp = np.load((idxs_paths[fold]), allow_pickle=True)
     test_idxs_tmp = list(set(list(audio_dep_idxs)+list(audio_non_idxs)) - set(train_idxs_tmp))
-    audio_lstm_model = torch.load(os.path.join(prefix, 'Model/ClassificationWhole/Audio/{}'.format(audio_model_paths[fold])))
+    audio_lstm_model = torch.load((audio_model_paths[fold]))
 
     train_idxs, test_idxs = [], []
     for idx in train_idxs_tmp:
