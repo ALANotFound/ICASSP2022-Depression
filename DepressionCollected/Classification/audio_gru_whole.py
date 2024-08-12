@@ -229,7 +229,7 @@ def evaluate(model, test_idxs, fold, train_idxs_tmp, train_idxs):
         print("F1-Score: {}\n".format(f1_score))
         print('=' * 89)
 
-        if max_f1 <= f1_score and train_acc > 0.8  and f1_score > 0.7:
+        if max_f1 <= f1_score and train_acc > 0.7  and f1_score > 0.7 and accuracy > 0.7:
             max_f1 = f1_score
             max_acc = accuracy
             max_rec = recall
@@ -255,85 +255,76 @@ def get_param_group(model):
 
 if __name__ == '__main__':
     kf = KFold(n_splits=3, shuffle=True)
-    fold = 1
-    for train_idxs_tmp, test_idxs_tmp in kf.split(audio_features):
 
-    # train_idxs_tmps = [np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.63_1.npy'), allow_pickle=True),
-    # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_2.npy'), allow_pickle=True),
-    # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_3.npy'), allow_pickle=True)]
+    # 备份原始数据
+    original_audio_features = audio_features.copy()
+    original_audio_targets = audio_targets.copy()
 
-    # fold1 = [125, 126, 129, 84, 69, 18, 81, 59, 76, 32, 60, 73, 86, 122, 5, 25, 68, 56, 92, 15, 24, 40, 11, 96, 95, 33, 17,
-    # 155, 141, 148, 58, 111, 26, 37, 4, 120, 22, 133, 8, 75, 9, 82, 79, 123, 55, 53, 80, 88, 23, 152, 134, 21, 41,
-    # 100] # 54
-    # fold2 = [158, 67, 20, 150, 99, 101, 19, 130, 6, 78, 131, 70, 42, 108, 118, 91, 156, 34, 97, 124, 61, 105, 139, 66, 12,
-    # 27, 143, 157, 117, 161, 83, 10, 110, 145, 140, 14, 159, 44, 116, 149, 114, 7, 98, 36, 47, 142, 57, 121, 51, 16,
-    # 109, 0, 135, 63]
-    # fold3 = [1, 106, 119, 132, 64, 85, 74, 48, 71, 102, 137, 146, 65, 35, 77, 127, 147, 13, 28, 93, 151, 138, 43, 136, 104,
-    # 31, 45, 153, 30, 154, 52, 87, 94, 3, 2, 113, 89, 144, 54, 29, 107, 50, 62, 39, 128, 103, 46, 112, 49, 160, 72,
-    # 38, 90, 115]
+    while True:
+        # 每次循环开始时重置数据
+        audio_features = original_audio_features.copy()
+        audio_targets = original_audio_targets.copy()
+        fold = 1
+        for train_idxs_tmp, test_idxs_tmp in kf.split(audio_features):
 
-    # fold4 = [1, 2, 3, 4, 5, 10, 11, 13, 14, 15, 16, 20, 21, 22, 25, 26, 27, 28, 31, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45,
-    # 46, 48, 49, 50, 51, 52, 53, 55, 56, 58, 59, 60, 63, 64, 65, 67, 68, 69, 70, 71, 74, 77, 79, 81, 83, 84, 85, 87,
-    # 88, 91, 92, 94, 101, 103, 104, 106, 108, 110, 112, 113, 114, 115, 116, 117, 119, 120, 121, 122, 125, 126, 127,
-    # 130, 131, 132, 133, 134, 135, 137, 138, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 153, 154, 155, 156, 157, 158, 159, 160]
-
-    # train_idxs_tmps = [np.array(fold3)]
-
-    # for idx_idx, train_idxs_tmp in enumerate(train_idxs_tmps):
-    #     fold = idx_idx + 1
-        # if idx_idx != 1:
-        #     continue
-        # test_idxs_tmp = list(set(list(audio_dep_idxs_tmp)+list(audio_non_idxs)) - set(train_idxs_tmp))
+        # train_idxs_tmps = [np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.63_1.npy'), allow_pickle=True),
+        # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_2.npy'), allow_pickle=True),
+        # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_3.npy'), allow_pickle=True)]
+        # for idx_idx, train_idxs_tmp in enumerate(train_idxs_tmps):
+        #     fold = idx_idx + 1
+            # if idx_idx != 1:
+            #     continue
+            # test_idxs_tmp = list(set(list(audio_dep_idxs_tmp)+list(audio_non_idxs)) - set(train_idxs_tmp))
 
 
-        train_idxs, test_idxs = [], []
-        resample_idxs = [0,1,2,3,4,5]
-        # depression data augmentation
-        for idx in train_idxs_tmp:
-            if idx in audio_dep_idxs_tmp:
-                feat = audio_features[idx]
-                count = 0
-                for i in itertools.permutations(feat, feat.shape[0]):
-                    if count in resample_idxs:
-                        audio_features = np.vstack((audio_features, np.expand_dims(list(i), 0)))
-                        audio_targets = np.hstack((audio_targets, 1))
-                        train_idxs.append(len(audio_features)-1)
-                    count += 1
-            else:
-                train_idxs.append(idx)
+            train_idxs, test_idxs = [], []
+            resample_idxs = [0,1,2,3,4,5]
+            # depression data augmentation
+            for idx in train_idxs_tmp:
+                if idx in audio_dep_idxs_tmp:
+                    feat = audio_features[idx]
+                    count = 0
+                    for i in itertools.permutations(feat, feat.shape[0]):
+                        if count in resample_idxs:
+                            audio_features = np.vstack((audio_features, np.expand_dims(list(i), 0)))
+                            audio_targets = np.hstack((audio_targets, 1))
+                            train_idxs.append(len(audio_features)-1)
+                        count += 1
+                else:
+                    train_idxs.append(idx)
 
-        for idx in test_idxs_tmp:
-            if idx in audio_dep_idxs_tmp:
-                feat = audio_features[idx]
-                count = 0
-                # resample_idxs = random.sample(range(6), 4)
-                resample_idxs = [0,1,4,5]
-                for i in itertools.permutations(feat, feat.shape[0]):
-                    if count in resample_idxs:
-                        audio_features = np.vstack((audio_features, np.expand_dims(list(i), 0)))
-                        audio_targets = np.hstack((audio_targets, 1))
-                        test_idxs.append(len(audio_features)-1)
-                    count += 1
-            else:
-                test_idxs.append(idx)
-            # test_idxs.append(idx)
+            for idx in test_idxs_tmp:
+                if idx in audio_dep_idxs_tmp:
+                    feat = audio_features[idx]
+                    count = 0
+                    # resample_idxs = random.sample(range(6), 4)
+                    resample_idxs = [0,1,4,5]
+                    for i in itertools.permutations(feat, feat.shape[0]):
+                        if count in resample_idxs:
+                            audio_features = np.vstack((audio_features, np.expand_dims(list(i), 0)))
+                            audio_targets = np.hstack((audio_targets, 1))
+                            test_idxs.append(len(audio_features)-1)
+                        count += 1
+                else:
+                    test_idxs.append(idx)
+                # test_idxs.append(idx)
 
-        model = AudioBiLSTM(config)
+            model = AudioBiLSTM(config)
 
-        if config['cuda']:
-            model = model.cuda()
+            if config['cuda']:
+                model = model.cuda()
 
-        param_group = get_param_group(model)
-        optimizer = optim.AdamW(param_group, lr=config['learning_rate'])
-        criterion = nn.CrossEntropyLoss()
-        # criterion = FocalLoss(class_num=2)
-        max_f1 = -1
-        max_acc = -1
-        max_rec = -1
-        max_prec = -1
-        train_acc = -1
+            param_group = get_param_group(model)
+            optimizer = optim.AdamW(param_group, lr=config['learning_rate'])
+            criterion = nn.CrossEntropyLoss()
+            # criterion = FocalLoss(class_num=2)
+            max_f1 = -1
+            max_acc = -1
+            max_rec = -1
+            max_prec = -1
+            train_acc = -1
 
-        for ep in range(1, config['epochs']):
-            train(ep, train_idxs)
-            tloss = evaluate(model, test_idxs, fold, train_idxs_tmp, train_idxs)
-        fold += 1
+            for ep in range(1, config['epochs']):
+                train(ep, train_idxs)
+                tloss = evaluate(model, test_idxs, fold, train_idxs_tmp, train_idxs)
+            fold += 1

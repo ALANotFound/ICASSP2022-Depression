@@ -13,10 +13,14 @@ import os
 import pickle
 import random
 import itertools
+import sys
 
-prefix = os.path.abspath(os.path.join(os.getcwd(), "."))
-text_features = np.load(os.path.join(prefix, 'Features/TextWhole/whole_samples_clf_avg.npz'))['arr_0']
-text_targets = np.load(os.path.join(prefix, 'Features/TextWhole/whole_labels_clf_avg.npz'))['arr_0']
+import pathlib
+root_path = str(pathlib.Path(__file__).parent)
+sys.path.append(root_path)
+prefix = '/home/youjiajun/data/EATD'
+text_features = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_samples_clf_256.npz'))['arr_0']
+text_targets = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_labels_clf_256.npz'))['arr_0']
 text_dep_idxs_tmp = np.where(text_targets == 1)[0]
 text_non_idxs = np.where(text_targets == 0)[0]
 
@@ -257,9 +261,7 @@ config = {
     'cuda': False,
 }
 
-train_idxs_tmps = [np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.63_1.npy'), allow_pickle=True),
-np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_2.npy'), allow_pickle=True),
-np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_3.npy'), allow_pickle=True)]
+train_idxs_tmps = [np.load(os.path.join(root_path, 'Model/train_idxs_0.76_1.npy'), allow_pickle=True)]
 fold = 1
 
 for idx_idx, train_idxs_tmp in enumerate(train_idxs_tmps):
