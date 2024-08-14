@@ -8,10 +8,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import train_test_split
 
 import numpy as np
-import pandas as pd
 import os
-import pickle
-import random
 import itertools
 import sys
 
@@ -19,8 +16,8 @@ import pathlib
 root_path = str(pathlib.Path(__file__).parent)
 sys.path.append(root_path)
 prefix = '/home/youjiajun/data/EATD'
-text_features = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_samples_clf_256.npz'))['arr_0']
-text_targets = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_labels_clf_256.npz'))['arr_0']
+text_features = np.load(os.path.join(prefix, 'Features/TextWhole/whole_samples_clf_avg.npz'))['arr_0']
+text_targets = np.load(os.path.join(prefix, 'Features/TextWhole/whole_labels_clf_avg.npz'))['arr_0']
 text_dep_idxs_tmp = np.where(text_targets == 1)[0]
 text_non_idxs = np.where(text_targets == 0)[0]
 
@@ -103,7 +100,7 @@ class TextBiLSTM(nn.Module):
         return result
 
     def forward(self, x):
-        # x : [len_seq, batch_size, embedding_dim]
+        # x : [len_seq, batch_size, embedding_dim] # torch.Size([4, 3, 1, 256])
         x = x.permute(1, 0, 2)
         # x = self.ln1(x)
         output, (final_hidden_state, _) = self.lstm_net(x)
@@ -161,7 +158,7 @@ def train(epoch, train_idxs):
     batch_idx = 1
     total_loss = 0
     correct = 0
-    X_train = text_features[train_idxs]
+    X_train = text_features[train_idxs].squeeze()
     Y_train = text_targets[train_idxs]
     for i in range(0, X_train.shape[0], config['batch_size']):
         if i + config['batch_size'] > X_train.shape[0]:
@@ -226,12 +223,12 @@ def evaluate(model, test_idxs, fold, train_idxs):
         print("F1-Score: {}\n".format(f1_score))
         print('=' * 89)
 
-        if max_f1 <= f1_score and train_acc > len(train_idxs)*0.9 and f1_score > 0.5:
+        if max_f1 <= f1_score and train_acc > 0.8 and f1_score > 0.55:
             max_f1 = f1_score
             max_acc = accuracy
             max_rec = recall
             max_prec = precision
-            save(model, os.path.join(prefix, 'Model/ClassificationWhole/Text/BiLSTM_{}_{:.2f}_{}'.format(config['hidden_dims'], max_f1, fold)))
+            save(model, os.path.join(root_path, 'Model/Text/BiLSTM_{}_{:.2f}_{}'.format(config['hidden_dims'], max_f1, fold)))
             print('*' * 64)
             print('model saved: f1: {}\tacc: {}'.format(max_f1, max_acc))
             print('*' * 64)

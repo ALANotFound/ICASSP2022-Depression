@@ -11,17 +11,22 @@ import wave
 import librosa
 from python_speech_features import *
 import re
+import os
+import sys
+import pathlib
+root_path = str(pathlib.Path(__file__).parent)
+sys.path.append(root_path)
 from allennlp.commands.elmo import ElmoEmbedder
 import os
 import tensorflow.compat.v1 as tf
 import itertools
 
-prefix = os.path.abspath(os.path.join(os.getcwd(), "./"))
-
-text_features = np.load(os.path.join(prefix, 'Features/TextWhole/whole_samples_clf_avg.npz'))['arr_0']
-text_targets = np.load(os.path.join(prefix, 'Features/TextWhole/whole_labels_clf_avg.npz'))['arr_0']
+prefix = '/home/youjiajun/data/EATD'
 audio_features = np.squeeze(np.load(os.path.join(prefix, 'Features/AudioWhole/whole_samples_clf_256.npz'))['arr_0'], axis=2)
 audio_targets = np.load(os.path.join(prefix, 'Features/AudioWhole/whole_labels_clf_256.npz'))['arr_0']
+text_features = np.load(os.path.join(prefix, 'Features/TextWhole/whole_samples_clf_avg.npz'))['arr_0']
+text_targets = np.load(os.path.join(prefix, 'Features/TextWhole/whole_labels_clf_avg.npz'))['arr_0']
+
 fuse_features = [[audio_features[i], text_features[i]] for i in range(text_features.shape[0])]
 fuse_targets = text_targets
 
@@ -402,7 +407,7 @@ config = {
     'audio_embed_size': 256,
     'text_embed_size': 1024,
     'batch_size': 2,
-    'epochs': 100,
+    'epochs': 400,
     'learning_rate': 8e-6,
     'audio_hidden_dims': 256,
     'text_hidden_dims': 128,
@@ -497,9 +502,8 @@ def evaluate(model, test_idxs, fold, train_idxs):
         
     y_test_pred, conf_matrix = model_performance(Y_test, pred[config['batch_size']:])
     
-    print('\nTest set: Average loss: {:.4f}'.format(total_loss/len(X_test)))
+    # print('\nTest set: Average loss: {:.4f}'.format(total_loss/len(X_test)))
     # custom evaluation metrics
-    print('Calculating additional test metrics...')
     accuracy = float(conf_matrix[0][0] + conf_matrix[1][1]) / np.sum(conf_matrix)
     precision = float(conf_matrix[0][0]) / (conf_matrix[0][0] + conf_matrix[0][1])
     recall = float(conf_matrix[0][0]) / (conf_matrix[0][0] + conf_matrix[1][0])
@@ -510,23 +514,23 @@ def evaluate(model, test_idxs, fold, train_idxs):
     print("F1-Score: {}\n".format(f1_score))
     print('='*89)
     
-    if max_f1 < f1_score and max_train_acc >= len(train_idxs)*0.9 and f1_score > 0.61:
+    if max_f1 < f1_score and max_train_acc >= 0.9 and f1_score > 0.61 and accuracy > 0.7:
         max_f1 = f1_score
         max_acc = accuracy
-        save(model, os.path.join(prefix, 'Model/ClassificationWhole/Fuse/fuse_{:.2f}_{}'.format(max_f1, fold)))
+        save(model, os.path.join(root_path, 'Model/Fuse/fuse_{:.2f}_{}'.format(max_f1, fold)))
         print('*'*64)
         print('model saved: f1: {}\tacc: {}'.format(max_f1, max_acc))
         print('*'*64)
     return total_loss
 
 if __name__ == '__main__':
-    idxs_paths = ['train_idxs_0.63_1.npy', 'train_idxs_0.65_2.npy', 'train_idxs_0.60_3.npy']
-    text_model_paths = ['BiLSTM_128_0.64_1.pt', 'BiLSTM_128_0.66_2.pt', 'BiLSTM_128_0.62_3.pt']
-    audio_model_paths = ['BiLSTM_gru_vlad256_256_0.67_1.pt', 'BiLSTM_gru_vlad256_256_0.67_2.pt', 'BiLSTM_gru_vlad256_256_0.63_3.pt']
+    idxs_paths = ['train_idxs_0.76_1.npy']
+    text_model_paths = ['BiLSTM_128_0.77_1.pt']
+    audio_model_paths = ['BiLSTM_gru_vlad256_256_0.76_1.pt']
     for fold in range(1, 4):
         # if fold != 2:
         #     continue
-        train_idxs_tmp = np.load(os.path.join(prefix, 'Features/TextWhole/{}'.format(idxs_paths[fold-1])), allow_pickle=True)
+        train_idxs_tmp = np.load(os.path.join(root_path, 'Model/{}'.format(idxs_paths[fold-1])), allow_pickle=True)
         test_idxs_tmp = list(set(list(fuse_dep_idxs)+list(fuse_non_idxs)) - set(train_idxs_tmp))
         resample_idxs = list(range(6))
 
@@ -563,8 +567,8 @@ if __name__ == '__main__':
             else:
                 test_idxs.append(idx)
 
-        text_lstm_model = torch.load(os.path.join(prefix, 'Model/ClassificationWhole/Text/{}'.format(text_model_paths[fold-1])))
-        audio_lstm_model = torch.load(os.path.join(prefix, 'Model/ClassificationWhole/Audio/{}'.format(audio_model_paths[fold-1])))
+        text_lstm_model = torch.load(os.path.join(root_path, 'Model/Text/{}'.format(text_model_paths[fold-1])))
+        audio_lstm_model = torch.load(os.path.join(root_path, 'Model/Audio/{}'.format(audio_model_paths[fold-1])))
         model_state_dict = {}
         model_state_dict['lstm_net_audio.weight_ih_l0'] = audio_lstm_model.state_dict()['lstm_net_audio.weight_ih_l0']
         model_state_dict['lstm_net_audio.weight_hh_l0'] = audio_lstm_model.state_dict()['lstm_net_audio.weight_hh_l0']

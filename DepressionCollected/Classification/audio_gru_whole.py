@@ -112,7 +112,7 @@ config = {
     'rnn_layers': 2,
     'embedding_size': 256,
     'batch_size': 8,
-    'epochs': 250,
+    'epochs': 220,
     'learning_rate': 6e-6,
     'hidden_dims': 256,
     'bidirectional': False,
@@ -229,14 +229,14 @@ def evaluate(model, test_idxs, fold, train_idxs_tmp, train_idxs):
         print("F1-Score: {}\n".format(f1_score))
         print('=' * 89)
 
-        if max_f1 <= f1_score and train_acc > 0.7  and f1_score > 0.7 and accuracy > 0.7:
+        if max_f1 <= f1_score and train_acc > 0.7  and f1_score > 0.6 and accuracy > 0.7:
             max_f1 = f1_score
             max_acc = accuracy
             max_rec = recall
             max_prec = precision
             mode ='gru'
             save(model, os.path.join(root_path, 'Model/Audio/BiLSTM_{}_vlad{}_{}_{:.2f}_{}'.format(mode, config['embedding_size'], config['hidden_dims'], max_f1, fold)))
-            np.save(os.path.join(root_path, 'Model/train_idxs_{:.2f}_{}.npy'.format(f1_score, fold)), train_idxs_tmp)
+            np.save(os.path.join(root_path, 'Model/train_idxs_{:.2f}_{}.npy'.format(accuracy, fold)), train_idxs_tmp)
             print('*' * 64)
             print('model saved: f1: {}\tacc: {}'.format(max_f1, max_acc))
             print('*' * 64)
@@ -267,14 +267,12 @@ if __name__ == '__main__':
         fold = 1
         for train_idxs_tmp, test_idxs_tmp in kf.split(audio_features):
 
-        # train_idxs_tmps = [np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.63_1.npy'), allow_pickle=True),
-        # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_2.npy'), allow_pickle=True),
-        # np.load(os.path.join(prefix, 'Features/TextWhole/train_idxs_0.60_3.npy'), allow_pickle=True)]
+        # train_idxs_tmps = [np.load(os.path.join(root_path, 'Model/train_idxs_0.76_1.npy'), allow_pickle=True)]
         # for idx_idx, train_idxs_tmp in enumerate(train_idxs_tmps):
-        #     fold = idx_idx + 1
+            # print('Fold: {}'.format(idx_idx+1)) 
             # if idx_idx != 1:
             #     continue
-            # test_idxs_tmp = list(set(list(audio_dep_idxs_tmp)+list(audio_non_idxs)) - set(train_idxs_tmp))
+            test_idxs_tmp = list(set(list(audio_dep_idxs_tmp)+list(audio_non_idxs)) - set(train_idxs_tmp))
 
 
             train_idxs, test_idxs = [], []
